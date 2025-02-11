@@ -44,7 +44,7 @@ def train():
         )
 
     # creates a copy of current code / files in the config folder
-    save_code_to_conf(args.exp_dir) 
+    #save_code_to_conf(args.exp_dir) 
     
     # pytorch lightning callbacks 
     callback = ModelCheckpoint(dirpath=args.exp_dir, filename='{epoch}', save_top_k=-1, save_last=True, every_n_epochs=specs["log_freq"])

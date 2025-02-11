@@ -80,7 +80,8 @@ class Dataset(torch.utils.data.Dataset):
         else:
             neg_sample = neg_tensor[neg_idx]
 
-        pc = f[f[:,-1]==0][:,:3]
+        #pc = f[f[:,-1]==0][:,:3]
+        pc = f[f[:,-1].abs()<=0.01][:,:3]  # near surface points
         pc_idx = torch.randperm(pc.shape[0])[:pc_size]
         pc = pc[pc_idx]
 

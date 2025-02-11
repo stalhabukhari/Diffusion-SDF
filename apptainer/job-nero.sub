@@ -1,0 +1,45 @@
+#!/bin/bash
+#SBATCH --job-name=nero
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1
+#SBATCH --gpus-per-node=1
+#SBATCH --time=00:01:00
+#SBATCH --output=slurm-logs/nero.out
+
+# ------- env setup -------
+module --force purge
+export DEPOT_DIR=/depot/bera89/data/talha
+export SLACK_CFG_DIR=$DEPOT_DIR/shell-stuff/slack/
+source $SLACK_CFG_DIR/define.sh
+
+# ------- slurm job -------
+PREV_JOB_ID=$1
+PREV_JOB_NAME=$(sacct -X --format="JobID,JobName%30" | grep $PREV_JOB_ID | awk '{print $2}')
+
+echo "------------- $(date +%Y-%m-%d_%H-%M-%S) -------------"
+echo "[Nero] Serving: $PREV_JOB_NAME ($PREV_JOB_ID)"
+
+NERO_RUN=0
+while :; do
+    # search for log file and messsage slack
+    for SLURM_LOG_FILEPATH in slurm-logs/slurm-$PREV_JOB_ID-*.out; do
+        echo "Checking $SLURM_LOG_FILEPATH"
+        if [[ -f $SLURM_LOG_FILEPATH ]]; then
+            # notify slack
+            ERRLOGTAIL="\`\`\`$(tail -n 10 $SLURM_LOG_FILEPATH | sed "s/\"/'/g")\`\`\`"
+            notify-slack "*[gilbreth]* \`$PREV_JOB_NAME\` (\`$PREV_JOB_ID\`)\n$ERRLOGTAIL"
+            
+            if [ $? -eq 0 ]; then
+                echo "[Nero] Success"
+            else
+                echo "[Nero] Failure"
+            fi
+            NERO_RUN=1
+        fi
+    done
+
+    if [ $NERO_RUN -eq 1 ]; then
+        break
+    fi
+done

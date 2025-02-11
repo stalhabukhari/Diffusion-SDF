@@ -178,4 +178,4 @@ dependencies:
     - widgetsnbextension==4.0.5
     - yarl==1.7.2
     - zipp==3.8.0
-prefix: /home/gchou/.conda/envs/diffusion
+#prefix: /home/gchou/.conda/envs/diffusion

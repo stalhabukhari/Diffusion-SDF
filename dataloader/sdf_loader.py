@@ -6,6 +6,7 @@ import os
 import random
 import torch
 import torch.utils.data
+from pathlib import Path
 from . import base 
 
 import pandas as pd 
@@ -55,7 +56,15 @@ class SdfLoader(base.Dataset):
         with tqdm(self.gt_files) as pbar:
             for i, f in enumerate(pbar):
                 pbar.set_description("Files loaded: {}/{}".format(i, len(self.gt_files)))
-                lst.append(torch.from_numpy(pd.read_csv(f, sep=',',header=None).values))
+                #lst.append(torch.from_numpy(pd.read_csv(f, sep=',',header=None).values))
+                fp = Path(f)
+                obj_class = fp.parent.parent.name
+                obj_inst = fp.parent.name
+                #base_dir = f"/home/talha/workspace/data/GDIFF-data/meshes-mesh2sdf-nglod-600k"
+                base_dir = f"{os.environ['DIFFSDF_DATA_DIR']}/meshes-mesh2sdf-nglod-600k"
+                npy_filepaths = (f"{base_dir}/{obj_class}/{obj_inst}-pts.npy",
+                                 f"{base_dir}/{obj_class}/{obj_inst}-sdf.npy")
+                lst.append(npy_filepaths)
         self.gt_files = lst
 
 
@@ -63,8 +72,12 @@ class SdfLoader(base.Dataset):
 
         near_surface_count = int(self.samples_per_mesh*0.7) if self.grid_source else self.samples_per_mesh
 
-        pc, sdf_xyz, sdf_gt =  self.labeled_sampling(self.gt_files[idx], near_surface_count, self.pc_size, load_from_path=False)
-        
+        #pc, sdf_xyz, sdf_gt =  self.labeled_sampling(self.gt_files[idx], near_surface_count, self.pc_size, load_from_path=False)
+        pts = np.load(self.gt_files[idx][0], mmap_mode='r')
+        sdf = np.load(self.gt_files[idx][1], mmap_mode='r')
+        ptssdf = np.concatenate((pts, sdf), axis=1)
+        ptssdf = torch.from_numpy(ptssdf)
+        pc, sdf_xyz, sdf_gt =  self.labeled_sampling(ptssdf, near_surface_count, self.pc_size, load_from_path=False)        
 
         if self.grid_source is not None:
             grid_count = self.samples_per_mesh - near_surface_count
